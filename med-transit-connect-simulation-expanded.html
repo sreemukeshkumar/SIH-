@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Med-Transit Connect Nurse Panel & Dynamic Hospital Router</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            min-height: 100vh;
+            padding: 20px;
+
+        }
+
+        .container {
+            max-width: 1780px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 20px;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        header {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-title h1 {
+            font-size: 24px;
+            color: #38bdf8;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-title p {
+
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        .badge {
+            background: rgba(56, 189, 248, 0.1);
+            color: #38bdf8;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+
+        .main-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+
+        .canvas-card {
+            background-color: #1e293b;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            padding: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #334155;
+        }
+
+        .card-title {
+
+            font-size: 16px;
+            font-weight: 600;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #simCanvas {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            height: auto;
+            background-color: #1e293b;
+            border-radius: 12px;
+            display: block;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        /* Nurse Dashboard Screen Simulator Widget Style */
+        .nurse-tablet-widget {
+
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            border: 4px solid #475569;
+            border-radius: 18px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .tablet-screen-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #334155;
+            padding-bottom: 10px;
+        }
+
+        .tablet-title {
+
+            color: #f472b6;
+            font-weight: 700;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .triage-group {
+            background-color: #1e293b;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+        }
+
+        .section-title {
+            font-size: 12px;
+
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+        }
+
+        .btn {
+            background-color: #0f172a;
+            color: #94a3b8;
+            border: 1px solid #334155;
+            padding: 12px;
+
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background-color: #334155;
+            color: #f8fafc;
+            transform: translateY(-1px);
+        }
+
+        .btn.active-cause {
+            background: linear-gradient(135deg, #0ea5e9, #1d4ed8);
+
+            border-color: #38bdf8;
+            color: white;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+        }
+
+        .btn.active-site {
+            background: linear-gradient(135deg, #ec4899, #be185d);
+            border-color: #f472b6;
+            color: white;
+            box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #22c55e, #15803d);
+            border: none;
+            color: white;
+            padding: 16px;
+            border-radius: 12px;
+            font-weight: 700;
+
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(34, 197, 94, 0.3);
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .btn-action:hover {
+            opacity: 0.95;
+            transform: translateY(-2px);
+        }
+
+        .btn-reset {
+            background-color: transparent;
+            color: #94a3b8;
+            border: 1px solid #334155;
+            padding: 10px;
+            border-radius: 10px;
+
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-reset:hover {
+            background-color: rgba(255,255,255,0.05);
+            color: white;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .monitor-box {
+            background-color: #1e293b;
+            border-radius: 16px;
+            border: 1px solid #334155;
+
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            padding: 6px 0;
+            border-bottom: 1px dashed #334155;
+        }
+
+        .data-row:last-child {
+            border-bottom: none;
+        }
+
+
+        .data-label {
+            color: #94a3b8;
+        }
+
+        .data-value {
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .text-neon {
+            color: #38bdf8;
+            text-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+        }
+
+        .text-pink {
+            color: #f472b6;
+            text-shadow: 0 0 8px rgba(244, 114, 182, 0.5);
+        }
+
+
+        .text-green {
+            color: #4ade80;
+            text-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+        }
+
+        .text-alert {
+            color: #f87171;
+            text-shadow: 0 0 8px rgba(248, 113, 113, 0.5);
+        }
+
+        .ai-viewport {
+            width: 100%;
+            height: 140px;
+            background-color: #020617;
+            border-radius: 10px;
+            border: 2px solid #ef4444;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+        }
+
+        #aiCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .ai-overlay-tag {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(239, 68, 68, 0.8);
+            color: white;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 6px;
+
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .log-terminal {
+            background-color: #020617;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            padding: 12px;
+            height: 180px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 11px;
+            color: #34d399;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+
+        .log-entry {
+            line-height: 1.4;
+        }
+
+        .log-time {
+            color: #64748b;
+            margin-right: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- Header Section -->
+        <header>
+            <div class="header-title">
+                <h1>🚑 Med-Transit Connect Simulation</h1>
+                <p>Nurse Touch-Panel Interface & Real-Time Dynamic Map Routing Sandbox</p>
+
+            </div>
+            <div class="badge">Ecosystem Testing Unit</div>
+        </header>
+
+        <!-- Main Animation & Nurse Screen columns -->
+        <div class="main-panel">
+            
+            <!-- Cartoon Simulation View window -->
+            <div class="canvas-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>🗺️ Live 2D Dynamic Preemption Corridor Animation Map</span>
+                    </div>
+                    <div>
+                        <button class="btn-reset" onclick="resetSimulation()">🔄 Hard Reset</button>
+                    </div>
+                </div>
+                <canvas id="simCanvas" width="1920" height="1080"></canvas>
+            </div>
+
+
+            <!-- Ambulance Dashboard: Simulated Nurse Tablet Screen Touch Panel -->
+            <div class="nurse-tablet-widget">
+                <div class="tablet-screen-header">
+                    <div class="tablet-title">📲 AMBULANCE ON-BOARD TRIARE TABLET SCREEN (Nurse Panel)</div>
+                    <div style="font-size: 11px; color: #4ade80; font-weight: bold; background: rgba(74,222,128,0.1); padding: 3px 8px; border-radius: 5px;">📡 Cloud Database Syncing: ACTIVE</div>
+                </div>
+
+                <!-- Part A: Cause of Injury inputs matrix buttons -->
+                <div class="triage-group">
+                    <span class="section-title">🏥 Step 1: Input Cause / Context of Incident</span>
+                    <div class="btn-grid">
+                        <button class="btn active-cause" id="cause-accident" onclick="setInjuryCause('ROAD_ACCIDENT')">💥 Road Accident / Collision</button>
+                        <button class="btn" id="cause-factory" onclick="setInjuryCause('FACTORY_ACCIDENT')">⚙️ Industrial / Factory Accident</button>
+                        <button class="btn" id="cause-self" onclick="setInjuryCause('SELF_HARM')">⚠️ Intentional Emergency Self-Harm</button>
+                    </div>
+                </div>
+
+                <!-- Part B: Physical site anatomy buttons options layout -->
+                <div class="triage-group">
+
+                    <span class="section-title">🩸 Step 2: Input Primary Anatomical Site of Injury</span>
+                    <div class="btn-grid">
+                        <button class="btn active-site" id="site-head" onclick="setInjurySite('HEAD')">🧠 Head / Brain Trauma</button>
+                        <button class="btn" id="site-leg" onclick="setInjurySite('LEG')">🦿 Leg / Limbs Crush Fracture</button>
+                        <button class="btn" id="site-chest" onclick="setInjurySite('CHEST')">🫁 Internal Chest / Thorax Impact</button>
+                    </div>
+                </div>
+
+                <!-- Simulation density properties toggles -->
+                <div style="background: #0f172a; padding: 12px; border-radius: 10px; border: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between;">
+                    <span class="section-title" style="margin-bottom:0;">Junction Signal Blocking Traffic Density Configuration:</span>
+                    <div style="display: flex; gap: 15px;">
+                        <label style="font-size: 13px; color: #94a3b8; display: flex; align-items: center; gap: 6px; cursor:pointer;">
+                            <input type="radio" name="trafficDensity" value="LIGHT" checked onchange="updateDensityConfig()"> Light Grid (Cars)
+                        </label>
+                        <label style="font-size: 13px; color: #94a3b8; display: flex; align-items: center; gap: 6px; cursor:pointer;">
+                            <input type="radio" name="trafficDensity" value="HEAVY" onchange="updateDensityConfig()"> Heavy Block (Buses/Trucks)
+                        </label>
+                    </div>
+
+                </div>
+
+                <button class="btn-action" id="actionBtn" onclick="toggleSimulation()">🚀 Dispatch Ambulance & Launch AI Auto-Routing</button>
+            </div>
+
+        </div>
+
+        <!-- System Telemetry Right Panel Sidebar Monitors -->
+        <div class="sidebar">
+            
+            <!-- Real-Time Metrics Log Panel Box -->
+            <div class="monitor-box">
+                <span class="section-title">🛰️ Cloud Telemetry Node Logs</span>
+                
+                <div class="data-row">
+                    <span class="data-label">Triaged Severity Level:</span>
+                    <span class="data-value text-alert" id="telemetry-severity">CRITICAL (Level 1)</span>
+                </div>
+                <div class="data-row">
+
+                    <span class="data-label">Selected Target Hospital:</span>
+                    <span class="data-value text-neon" id="telemetry-hospital">Apollo Care Center</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Verified Medical Assets:</span>
+                    <span class="data-value text-green" id="telemetry-resources">24/7 CT Scan + Neuro ICU Secure</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Ambulance Coordinates:</span>
+                    <span class="data-value" id="telemetry-coords">Lat: 13.0827, Lng: 80.2707</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Intersection Bounds:</span>
+                    <span class="data-value text-pink" id="telemetry-distance">500 Meters Out</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Preemption Time Window:</span>
+                    <span class="data-value" id="telemetry-weight">Max Override Window</span>
+                </div>
+
+            </div>
+
+            <!-- Inset Screen Viewport: Simulated ESP32-CAM TinyML Output Frame -->
+            <div class="monitor-box">
+                <span class="section-title">📷 Traffic Intersection Camera [TinyML Frame]</span>
+                <div class="ai-viewport">
+                    <div class="ai-overlay-tag">TinyML Scanner</div>
+                    <canvas id="aiCanvas" width="350" height="140"></canvas>
+                </div>
+                <div class="data-row" style="margin-top: 4px;">
+                    <span class="data-label">Object Tracking Pipeline:</span>
+                    <span class="data-value text-neon" id="ai-inference" style="font-size:12px;">Idle</span>
+                </div>
+            </div>
+
+            <!-- Log Terminal Box -->
+            <div class="monitor-box" style="flex-grow: 1;">
+                <span class="section-title">📜 System Routing & Verification Steps</span>
+                <div class="log-terminal" id="logger">
+
+                    <!-- Dynamic updates logs placeholder -->
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        // Global System Parameters Mapping Variables
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const aiCanvas = document.getElementById('aiCanvas');
+        const aiCtx = aiCanvas.getContext('2d');
+
+        // All drawing coordinates below were authored against a larger 1440x810 (16:9) "virtual" space
+        // (an expanded multi-road city map). The canvas element is bigger still, so we scale
+        // every draw call up uniformly.
+        const VIRTUAL_W = 1440, VIRTUAL_H = 810;
+        const SCALE_X = canvas.width / VIRTUAL_W;
+        const SCALE_Y = canvas.height / VIRTUAL_H;
+
+        let isRunning = false;
+        let animationId = null;
+
+        // Custom Multi-Tier parameters vectors tracking updates
+
+        let injuryCause = 'ROAD_ACCIDENT';
+        let injurySite = 'HEAD';
+        let densityProfile = 'LIGHT';
+
+        const MAIN_AVENUE_Y = 730;      // Center line of the entry arterial road
+        const START_X = 60;
+        const START_Y = MAIN_AVENUE_Y - 10;
+
+        let ambulanceX = START_X;
+        let ambulanceY = START_Y; // Starts on the lower corridor lane track
+        const targetJunctionX = 560; // Main intersection junction location point (turn 1: onto the spine)
+        const HOSPITAL_GATE_X = 1270; // Left edge of every hospital's gate road (turn 2 -> arrival)
+        let drivePhase = 'MAIN'; // MAIN -> SPINE (turn onto vertical spine) -> BRANCH (turn onto hospital gate road)
+        let signalState = 'RED';
+        let logsInjected = {};
+        let obstacleCars = [];
+        let ambientTraffic = [];
+
+        // Static parameters definition of five destination hospitals spread across the expanded map,
+        // each reached via its own branch road off the central spine (multiple turns per route).
+        const hospitalsConfig = {
+            APOLLO:         { name: "Apollo Care Center",         y: 95,  color: '#38bdf8', tag: "NEURO CLINIC" },
+            KMC:            { name: "KMC Emergency Trauma Unit",  y: 245, color: '#e11d48', tag: "TRAUMA UNIT" },
+            CITY_GEN:       { name: "City General Hospital",      y: 395, color: '#a855f7', tag: "ORTHO WARD" },
+            INDUSTRIAL_MED: { name: "Industrial Medic Center",    y: 545, color: '#f97316', tag: "OCCUPATIONAL TRAUMA" },
+            MIND_CARE:      { name: "MindCare Crisis Center",     y: 695, color: '#22c55e', tag: "PSYCH CRISIS UNIT" }
+        };
+
+        // Determine specific target hospital coordinates destination paths dynamically based on Nurse input metrics configurations
+
+        function computeTriagedDestination() {
+            let output = {
+                severity: "CRITICAL (Level 1)",
+                hospital: hospitalsConfig.APOLLO.name,
+                id: "APOLLO",
+                facilities: "24/7 CT Scan + Neuro ICU Secure",
+                weight: "Priority Max: 25s Advance green window allocation"
+            };
+
+            if (injurySite === 'HEAD') {
+                output.severity = "CRITICAL - BRAIN TRAUMA (Level 1)";
+                output.hospital = hospitalsConfig.APOLLO.name;
+                output.id = "APOLLO";
+                output.facilities = "24/7 Dedicated CT-Scan Node + Neuro Surgery ICU";
+                output.weight = "Override Weight: MAX Window Allocation (Fast Flush)";
+            }
+            else if (injuryCause === 'SELF_HARM') {
+                output.severity = "URGENT - CRISIS STABILIZATION (Level 1)";
+                output.hospital = hospitalsConfig.MIND_CARE.name;
+                output.id = "MIND_CARE";
+                output.facilities = "Crisis Counselors On-Site + Medical Stabilization Bay";
+                output.weight = "Override Weight: High Priority Discreet Corridor Window";
+            }
+            else if (injurySite === 'CHEST') {
+                output.severity = "IMMINENT RISK - THORACIC IMPACT (Level 1)";
+                output.hospital = hospitalsConfig.KMC.name;
+                output.id = "KMC";
+                output.facilities = "Cardio-Thoracic Specialist Team + On-Duty Ventilator";
+                output.weight = "Override Weight: High Priority Flush Window";
+            }
+            else if (injurySite === 'LEG') {
+                if (injuryCause === 'FACTORY_ACCIDENT') {
+                    output.severity = "HIGH RISK - INDUSTRIAL CRUSH (Level 2)";
+
+                    output.hospital = hospitalsConfig.INDUSTRIAL_MED.name;
+                    output.id = "INDUSTRIAL_MED";
+                    output.facilities = "Occupational Trauma Wing + Emergency OT Open";
+                    output.weight = "Override Weight: Standard Dynamic Window Allocation";
+                } else {
+                    output.severity = "STABLE - ISOLATED LIMB BREAK (Level 3)";
+                    output.hospital = hospitalsConfig.CITY_GEN.name;
+                    output.id = "CITY_GEN";
+                    output.facilities = "Orthopedic Ward / General Casting Available";
+                    output.weight = "Override Weight: Moderate Window Allocation";
+                }
+            }
+
+
+            return output;
+        }
+
+        function setInjuryCause(cause) {
+            if (isRunning) return;
+            injuryCause = cause;
+            document.querySelectorAll('[id^="cause-"]').forEach(b => b.classList.remove('active-cause'));
+            if (cause === 'ROAD_ACCIDENT') document.getElementById('cause-accident').classList.add('active-cause');
+            if (cause === 'FACTORY_ACCIDENT') document.getElementById('cause-factory').classList.add('active-cause');
+            if (cause === 'SELF_HARM') document.getElementById('cause-self').classList.add('active-cause');
+            syncTriageFormTelemetry();
+        }
+
+        function setInjurySite(site) {
+            if (isRunning) return;
+            injurySite = site;
+            document.querySelectorAll('[id^="site-"]').forEach(b => b.classList.remove('active-site'));
+            if (site === 'HEAD') document.getElementById('site-head').classList.add('active-site');
+            if (site === 'LEG') document.getElementById('site-leg').classList.add('active-site');
+
+            if (site === 'CHEST') document.getElementById('site-chest').classList.add('active-site');
+            syncTriageFormTelemetry();
+        }
+
+        function syncTriageFormTelemetry() {
+            let data = computeTriagedDestination();
+            document.getElementById('telemetry-severity').innerText = data.severity;
+            document.getElementById('telemetry-hospital').innerText = data.hospital;
+            document.getElementById('telemetry-resources').innerText = data.facilities;
+            document.getElementById('telemetry-weight').innerText = data.weight;
+            
+            addLog(`🔄 Nurse Tablet Entry Modulated: [Cause: ${injuryCause} | Site: ${injurySite}]. Local database auto-sorted routing lock target to: ${data.hospital}`, 'info');
+            drawCartoonScene(); // Instant refresh vectors tracking lines mapping
+        }
+
+        function updateDensityConfig() {
+            if (isRunning) return;
+            densityProfile = document.querySelector('input[name="trafficDensity"]:checked').value;
+            addLog(`AI Configuration Changed: Road block congestion profile set to ${densityProfile}`, 'info');
+
+            resetSimulation();
+        }
+
+        function initializeObstacles() {
+            obstacleCars = [];
+            if (densityProfile === 'LIGHT') {
+                obstacleCars.push({ x: targetJunctionX - 90, y: MAIN_AVENUE_Y - 5, baseY: MAIN_AVENUE_Y - 5, laneShift: 0, cleared: false, type: 'CAR', color: '#38bdf8', width: 32, height: 18, speed: 0, targetSpeed: 0 });
+                obstacleCars.push({ x: targetJunctionX - 45, y: MAIN_AVENUE_Y - 5, baseY: MAIN_AVENUE_Y - 5, laneShift: 0, cleared: false, type: 'CAR', color: '#fbbf24', width: 32, height: 18, speed: 0, targetSpeed: 0 });
+            } else {
+                obstacleCars.push({ x: targetJunctionX - 120, y: MAIN_AVENUE_Y - 8, baseY: MAIN_AVENUE_Y - 8, laneShift: 0, cleared: false, type: 'BUS', color: '#f59e0b', width: 55, height: 22, speed: 0, targetSpeed: 0 });
+                obstacleCars.push({ x: targetJunctionX - 55, y: MAIN_AVENUE_Y - 8, baseY: MAIN_AVENUE_Y - 8, laneShift: 0, cleared: false, type: 'TRUCK', color: '#f97316', width: 50, height: 22, speed: 0, targetSpeed: 0 });
+            }
+            initAmbientTraffic();
+        }
+
+        // Decorative background traffic on the spine + branch roads, purely to make the expanded
+        // map feel like a busy live city grid. These do not interact with triage/preemption logic.
+        function initAmbientTraffic() {
+            ambientTraffic = [];
+            const hospitalRows = Object.values(hospitalsConfig).map(h => h.y);
+            const spineTopY = Math.min(...hospitalRows) - 50;
+            const spineBottomY = MAIN_AVENUE_Y + 20;
+            const spineCars = [
+                { fixed: targetJunctionX - 38, min: spineTopY + 20, max: spineBottomY - 60, color: '#a3e635', type: 'CAR' },
+                { fixed: targetJunctionX + 38, min: spineTopY + 50, max: spineBottomY - 30, color: '#f472b6', type: 'CAR' }
+            ];
+            spineCars.forEach((c, i) => {
+                ambientTraffic.push({
+                    axis: 'y', fixed: c.fixed, pos: c.min + (c.max - c.min) * (0.3 + 0.2 * i),
+                    min: c.min, max: c.max, dir: i % 2 === 0 ? 1 : -1, speed: 0.9 + i * 0.15,
+                    color: c.color, type: c.type
+                });
+            });
+
+            const branchPalette = ['#38bdf8', '#fbbf24', '#f472b6', '#34d399', '#a78bfa'];
+            Object.values(hospitalsConfig).forEach((h, i) => {
+                ambientTraffic.push({
+                    axis: 'x', fixed: h.y + (i % 2 === 0 ? 14 : -14),
+                    pos: targetJunctionX + 60 + i * 90,
+                    min: targetJunctionX + 30, max: HOSPITAL_GATE_X - 40,
+                    dir: i % 2 === 0 ? 1 : -1, speed: 0.8 + (i * 0.12),
+                    color: branchPalette[i % branchPalette.length],
+                    type: i % 2 === 0 ? 'TRUCK' : 'CAR'
+                });
+            });
+        }
+
+        function updateAmbientTraffic() {
+            ambientTraffic.forEach(car => {
+                car.pos += car.dir * car.speed;
+                if (car.pos >= car.max) { car.pos = car.max; car.dir = -1; }
+                if (car.pos <= car.min) { car.pos = car.min; car.dir = 1; }
+            });
+        }
+
+        function drawAmbientTraffic() {
+            ambientTraffic.forEach(car => {
+                let w = car.type === 'TRUCK' ? 40 : 30, h = car.type === 'TRUCK' ? 20 : 16;
+                ctx.save();
+                if (car.axis === 'x') {
+                    let x = car.dir >= 0 ? car.pos : car.pos - w;
+                    if (car.type === 'TRUCK') drawTruckIcon(x, car.fixed - h / 2, w, h, car.color);
+                    else drawCarIcon(x, car.fixed - h / 2, w, h, car.color);
+                } else {
+                    // Vertical road: rotate the flat icon so it faces up/down the spine.
+                    ctx.translate(car.fixed, car.pos);
+                    ctx.rotate(car.dir >= 0 ? Math.PI / 2 : -Math.PI / 2);
+                    if (car.type === 'TRUCK') drawTruckIcon(-w / 2, -h / 2, w, h, car.color);
+                    else drawCarIcon(-w / 2, -h / 2, w, h, car.color);
+                }
+                ctx.restore();
+            });
+        }
+
+        function addLog(message, category = 'info') {
+            const logger = document.getElementById('logger');
+            const now = new Date();
+            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            
+
+            let color = '#34d399';
+            if (category === 'auth') color = '#fbbf24';
+            if (category === 'action') color = '#38bdf8';
+            if (category === 'alert') color = '#f87171';
+
+            const logItem = document.createElement('div');
+            logItem.className = 'log-entry';
+            logItem.innerHTML = `<span class="log-time">[${timeStr}]</span><span style="color:${color}">${message}</span>`;
+            logger.appendChild(logItem);
+            logger.scrollTop = logger.scrollHeight;
+        }
+
+        // Full 2D Cartoon Scene drawing operations
+        function drawCartoonScene() {
+            // Reset then scale so all coordinates below (authored for 950x400) map onto the larger canvas
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.setTransform(SCALE_X, 0, 0, SCALE_Y, 0, 0);
+
+            // Background Canvas Area Frame layout base
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, VIRTUAL_W, VIRTUAL_H);
+
+            const avgTop = MAIN_AVENUE_Y - 20, avgBottom = MAIN_AVENUE_Y + 20;
+            const hospitalRows = Object.values(hospitalsConfig).map(h => h.y);
+            const spineTopY = Math.min(...hospitalRows) - 50;
+            const spineBottomY = MAIN_AVENUE_Y + 20;
+
+            // Draw Initial Main Arterial Entry Road segment corridor (Bottom Left quadrant lane approach)
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(0, avgTop, targetJunctionX, avgBottom - avgTop);
+
+            // Draw Center lane line markers indicators on initial entry segment corridor lane
+            ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2; ctx.setLineDash([8, 8]);
+            ctx.beginPath(); ctx.moveTo(0, MAIN_AVENUE_Y); ctx.lineTo(targetJunctionX, MAIN_AVENUE_Y); ctx.stroke(); ctx.setLineDash([]);
+
+            // Draw the central vertical spine road (turn 1: onto the spine) that all branch roads connect to
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(targetJunctionX - 20, spineTopY, 40, spineBottomY - spineTopY);
+            ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2; ctx.setLineDash([8, 8]);
+            ctx.beginPath(); ctx.moveTo(targetJunctionX, spineTopY); ctx.lineTo(targetJunctionX, spineBottomY); ctx.stroke(); ctx.setLineDash([]);
+
+            // Draw a branch road (turn 2: off the spine, toward the hospital gate) + hospital block for every hospital
+            const currentTriage = computeTriagedDestination();
+            Object.keys(hospitalsConfig).forEach(key => {
+                let h = hospitalsConfig[key];
+
+                // Branch road channel from the spine out to the hospital's gate
+                ctx.fillStyle = '#334155';
+                ctx.fillRect(targetJunctionX, h.y - 20, HOSPITAL_GATE_X - targetJunctionX, 40);
+                ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2; ctx.setLineDash([8, 8]);
+                ctx.beginPath(); ctx.moveTo(targetJunctionX, h.y); ctx.lineTo(HOSPITAL_GATE_X, h.y); ctx.stroke(); ctx.setLineDash([]);
+
+                // Small turn-corner crossing marks where the branch meets the spine
+                ctx.fillStyle = '#e2e8f0';
+                ctx.fillRect(targetJunctionX - 6, h.y - 16, 4, 4);
+                ctx.fillRect(targetJunctionX - 6, h.y + 12, 4, 4);
+
+                // Draw structured Cartoon Physical Hospital Box Modules components icons on the right margin border
+                let isSelected = currentTriage.id === key;
+
+                // Draw main hospital building panel box shapes bounds parameters
+                ctx.fillStyle = h.color;
+                ctx.fillRect(HOSPITAL_GATE_X, h.y - 25, 140, 50);
+
+                // Draw building window patterns lines components graphics
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(HOSPITAL_GATE_X + 20, h.y - 15, 15, 12);
+                ctx.fillRect(HOSPITAL_GATE_X + 50, h.y - 15, 15, 12);
+                ctx.fillRect(HOSPITAL_GATE_X + 115, h.y - 15, 15, 12);
+
+                // Hospital Red Cross logo block symbols overlay drawings 
+                ctx.fillStyle = '#ef4444';
+                ctx.fillRect(HOSPITAL_GATE_X + 85, h.y - 18, 12, 4);
+                ctx.fillRect(HOSPITAL_GATE_X + 89, h.y - 22, 4, 12);
+
+                // Descriptive Text overlays typography labels strings mapping
+                ctx.fillStyle = '#ffffff'; ctx.font = 'bold 10px sans-serif';
+                ctx.fillText(h.name, HOSPITAL_GATE_X, h.y - 32);
+                ctx.fillStyle = '#94a3b8'; ctx.font = '8px monospace';
+                ctx.fillText(`[${h.tag}]`, HOSPITAL_GATE_X, h.y + 36);
+
+                // Draw glowing active route line path indicators if this specific hospital matches live triage logic 
+                if (isSelected) {
+                    ctx.strokeStyle = '#4ade80';
+                    ctx.lineWidth = 3;
+                    ctx.shadowBlur = 10; ctx.shadowColor = '#4ade80';
+                    ctx.beginPath();
+                    ctx.moveTo(ambulanceX + 35, ambulanceY + 10);
+                    if (drivePhase === 'MAIN') {
+                        ctx.lineTo(targetJunctionX, MAIN_AVENUE_Y);
+                        ctx.lineTo(targetJunctionX, h.y);
+                    } else if (drivePhase === 'SPINE') {
+                        ctx.lineTo(targetJunctionX, h.y);
+                    }
+                    ctx.lineTo(HOSPITAL_GATE_X - 5, h.y);
+                    ctx.stroke();
+
+                    ctx.shadowBlur = 0; // Immediate reset parameter layout configuration glow parameters
+
+                    // Glowing bounding border box selection surrounding target hospital layout structure panel
+                    ctx.strokeStyle = '#4ade80'; ctx.lineWidth = 2;
+                    ctx.strokeRect(HOSPITAL_GATE_X - 4, h.y - 29, 148, 58);
+                } else {
+                    // Dim non-selected targets transparency values to highlight choice routing path selection
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.45)';
+                    ctx.fillRect(HOSPITAL_GATE_X, h.y - 25, 140, 50);
+                }
+            });
+
+            // Draw Zebra crossing line layout indicators right at the mouth node of the crossroads junction structure
+            ctx.fillStyle = '#e2e8f0';
+            for (let i = avgTop + 2; i < avgBottom; i += 8) { ctx.fillRect(targetJunctionX - 12, i, 6, 5); }
+
+            // Render physical Traffic Light Signal Pole structures blocks modules
+            const poleTopY = avgTop - 70, boxTopY = poleTopY - 35, circle1Y = boxTopY + 9, circle2Y = boxTopY + 23;
+            ctx.fillStyle = '#64748b'; ctx.fillRect(targetJunctionX - 5, poleTopY, 6, avgTop - poleTopY);
+            ctx.fillStyle = '#020617'; ctx.fillRect(targetJunctionX - 14, boxTopY, 24, 35);
+
+
+            let rColor = '#475569', gColor = '#475569';
+            if (signalState === 'RED') rColor = '#ef4444';
+            if (signalState === 'ADVANCE_GREEN') gColor = '#22c55e';
+
+            ctx.fillStyle = rColor; ctx.beginPath(); ctx.arc(targetJunctionX - 2, circle1Y, 6, 0, Math.PI * 2); ctx.fill();
+            if (signalState === 'RED') {
+                ctx.shadowBlur = 12; ctx.shadowColor = '#ef4444'; ctx.fillStyle = 'rgba(239, 68, 68, 0.3)';
+                ctx.beginPath(); ctx.arc(targetJunctionX - 2, circle1Y, 11, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+            }
+
+            ctx.fillStyle = gColor; ctx.beginPath(); ctx.arc(targetJunctionX - 2, circle2Y, 6, 0, Math.PI * 2); ctx.fill();
+            if (signalState === 'ADVANCE_GREEN') {
+                ctx.shadowBlur = 12; ctx.shadowColor = '#22c55e'; ctx.fillStyle = 'rgba(34, 197, 94, 0.3)';
+                ctx.beginPath(); ctx.arc(targetJunctionX - 2, circle2Y, 11, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+            }
+
+            // Draw the wider ambient city traffic first, so the foreground triage vehicles sit on top
+            drawAmbientTraffic();
+
+            // Draw obstacle lines cars blocking track channels 
+            obstacleCars.forEach(car => {
+                if (car.type === 'CAR') {
+                    drawCarIcon(car.x, car.y - 6, car.width, car.height + 6, car.color);
+                } else if (car.type === 'TRUCK') {
+                    drawTruckIcon(car.x, car.y - 6, car.width, car.height + 6, car.color);
+                } else {
+                    drawBoxVehicleIcon(car.x, car.y - 6, car.width, car.height + 6, car.color, 3);
+                }
+
+                let distanceToAmbulance = Math.abs((ambulanceX + 45) - car.x);
+                if (isRunning && distanceToAmbulance <= 150 && ambulanceX < targetJunctionX) {
+                    ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 1.5; ctx.strokeRect(car.x - 2, car.y - 4, car.width + 4, car.height + 8);
+                    ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 8px sans-serif'; ctx.fillText("⚠️ ALERT", car.x - 2, car.y - 6);
+                }
+            });
+
+            // Draw animated Smart Ambulance Node vehicle cartoon element coordinates mappings profiles updates
+            drawAmbulance(ambulanceX, ambulanceY);
+
+            // Draw active 200m invisible peripheral alert mesh line circle halo
+            if (isRunning && ambulanceX < targetJunctionX) {
+                ctx.strokeStyle = 'rgba(244, 114, 182, 0.2)'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 5]);
+                ctx.beginPath(); ctx.arc(ambulanceX + 40, ambulanceY + 10, 150, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+                ctx.fillStyle = 'rgba(244, 114, 182, 0.005)'; ctx.fill();
+            }
+        }
+
+
+        // Shared helper: rounded-rectangle path for the flat-icon vehicle style
+        function roundRectPath(context, x, y, w, h, r) {
+            context.beginPath();
+            context.moveTo(x + r, y);
+            context.arcTo(x + w, y, x + w, y + h, r);
+            context.arcTo(x + w, y + h, x, y + h, r);
+            context.arcTo(x, y + h, x, y, r);
+            context.arcTo(x, y, x + w, y, r);
+            context.closePath();
+        }
+
+        // Small passenger car icon: rounded cabin roof + body + circular hub-cap wheels (matches flat cartoon-car reference art)
+        function drawCarIcon(x, y, w, h, color) {
+            ctx.save();
+            ctx.lineWidth = 1.6;
+            ctx.strokeStyle = '#1e293b';
+
+            // lower body
+            ctx.fillStyle = color;
+            roundRectPath(ctx, x, y + h * 0.32, w, h * 0.58, h * 0.28);
+            ctx.fill(); ctx.stroke();
+
+            // cabin roof
+            let cabW = w * 0.58, cabX = x + w * 0.21;
+            roundRectPath(ctx, cabX, y, cabW, h * 0.5, h * 0.22);
+            ctx.fill(); ctx.stroke();
+
+            // windows
+            ctx.fillStyle = '#bae6fd';
+            roundRectPath(ctx, cabX + cabW * 0.08, y + h * 0.1, cabW * 0.36, h * 0.28, 2);
+            ctx.fill();
+            roundRectPath(ctx, cabX + cabW * 0.56, y + h * 0.1, cabW * 0.36, h * 0.28, 2);
+            ctx.fill();
+
+            // wheels with hub-caps
+            ctx.fillStyle = '#1e293b';
+            let wr = h * 0.2, wy = y + h * 0.9;
+            ctx.beginPath(); ctx.arc(x + w * 0.24, wy, wr, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x + w * 0.76, wy, wr, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#94a3b8';
+            ctx.beginPath(); ctx.arc(x + w * 0.24, wy, wr * 0.42, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x + w * 0.76, wy, wr * 0.42, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+        }
+
+        // Boxier bus/truck icon: full-width flat roof with a row of windows, used for heavy-traffic obstacles
+        function drawBoxVehicleIcon(x, y, w, h, color, windowCount) {
+            ctx.save();
+            ctx.lineWidth = 1.6;
+            ctx.strokeStyle = '#1e293b';
+            ctx.fillStyle = color;
+            roundRectPath(ctx, x, y, w, h * 0.8, 5);
+            ctx.fill(); ctx.stroke();
+
+            ctx.fillStyle = '#bae6fd';
+            let winW = (w - 10) / windowCount - 4;
+            for (let i = 0; i < windowCount; i++) {
+                let wx = x + 5 + i * (winW + 4);
+                roundRectPath(ctx, wx, y + h * 0.1, winW, h * 0.3, 2);
+                ctx.fill();
+            }
+
+            ctx.fillStyle = '#1e293b';
+            let wr = h * 0.2, wy = y + h * 0.8 + wr * 0.5;
+            ctx.beginPath(); ctx.arc(x + w * 0.2, wy, wr, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x + w * 0.8, wy, wr, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#94a3b8';
+            ctx.beginPath(); ctx.arc(x + w * 0.2, wy, wr * 0.42, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x + w * 0.8, wy, wr * 0.42, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+        }
+
+        // Delivery truck icon: orange cargo box + blue front cab with windshield (matches reference delivery-truck art)
+        function drawTruckIcon(x, y, w, h, color) {
+            ctx.save();
+            ctx.lineWidth = 1.6;
+            ctx.strokeStyle = '#1e293b';
+
+            let cabW = w * 0.28, boxW = w - cabW;
+
+            // cargo box (rear)
+            ctx.fillStyle = color;
+            roundRectPath(ctx, x, y, boxW, h * 0.82, 4);
+            ctx.fill(); ctx.stroke();
+
+            // stripe accent on cargo box
+            ctx.fillStyle = '#1d4ed8';
+            ctx.fillRect(x + boxW * 0.06, y + h * 0.42, boxW * 0.88, h * 0.08);
+
+            // front cab
+            ctx.fillStyle = '#2563eb';
+            roundRectPath(ctx, x + boxW - 3, y + h * 0.18, cabW + 3, h * 0.64, 4);
+            ctx.fill(); ctx.stroke();
+
+            // windshield
+            ctx.fillStyle = '#bae6fd';
+            roundRectPath(ctx, x + boxW + cabW * 0.15, y + h * 0.26, cabW * 0.65, h * 0.3, 2);
+            ctx.fill(); ctx.stroke();
+
+            // wheels with hub-caps
+            ctx.fillStyle = '#1e293b';
+            let wr = h * 0.2, wy = y + h * 0.82 + wr * 0.5;
+            ctx.beginPath(); ctx.arc(x + boxW * 0.22, wy, wr, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x + w * 0.85, wy, wr, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#94a3b8';
+            ctx.beginPath(); ctx.arc(x + boxW * 0.22, wy, wr * 0.42, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x + w * 0.85, wy, wr * 0.42, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+        }
+
+        // Ambulance icon: rounded white cargo box + sloped front cabin with windshield, red cross, rooftop beacon (matches reference ambulance art)
+        function drawAmbulance(x, y) {
+            ctx.save();
+            ctx.lineWidth = 1.8;
+            ctx.strokeStyle = '#1e293b';
+
+            // rear cargo box
+            ctx.fillStyle = '#f8fafc';
+            roundRectPath(ctx, x, y, 46, 24, 4);
+            ctx.fill(); ctx.stroke();
+
+            // sloped front cabin
+            ctx.fillStyle = '#f8fafc';
+            ctx.beginPath();
+            ctx.moveTo(x + 46, y + 6);
+            ctx.lineTo(x + 46, y + 24);
+            ctx.lineTo(x + 60, y + 24);
+            ctx.lineTo(x + 60, y + 14);
+            ctx.quadraticCurveTo(x + 60, y + 6, x + 52, y + 6);
+            ctx.closePath();
+            ctx.fill(); ctx.stroke();
+
+            // windshield
+            ctx.fillStyle = '#7dd3fc';
+            ctx.beginPath();
+            ctx.moveTo(x + 48, y + 8);
+            ctx.lineTo(x + 52, y + 8);
+            ctx.quadraticCurveTo(x + 57, y + 8, x + 57, y + 13);
+            ctx.lineTo(x + 48, y + 13);
+            ctx.closePath();
+            ctx.fill(); ctx.stroke();
+
+            // rear window
+            ctx.fillStyle = '#7dd3fc';
+            roundRectPath(ctx, x + 34, y + 5, 9, 9, 2);
+            ctx.fill(); ctx.stroke();
+
+            // red cross emblem
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(x + 13, y + 9, 14, 4);
+            ctx.fillRect(x + 18, y + 4, 4, 14);
+
+            // side stripe
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(x, y + 18, 46, 3);
+
+            // wheels with hub-caps
+            ctx.fillStyle = '#1e293b';
+            ctx.beginPath(); ctx.arc(x + 12, y + 24, 6, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x + 46, y + 24, 6, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#94a3b8';
+            ctx.beginPath(); ctx.arc(x + 12, y + 24, 2.5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x + 46, y + 24, 2.5, 0, Math.PI * 2); ctx.fill();
+
+            // rooftop beacon
+            if (isRunning) {
+                let flashTick = Math.floor(Date.now() / 150) % 2;
+                ctx.fillStyle = flashTick === 0 ? '#ef4444' : '#3b82f6';
+                roundRectPath(ctx, x + 16, y - 6, 12, 6, 2);
+                ctx.fill(); ctx.stroke();
+            } else {
+                ctx.fillStyle = '#ef4444';
+                roundRectPath(ctx, x + 16, y - 6, 12, 6, 2);
+                ctx.fill(); ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawAICameraInference() {
+            aiCtx.fillStyle = '#020617'; aiCtx.fillRect(0, 0, aiCanvas.width, aiCanvas.height);
+
+
+            if (!isRunning || ambulanceX < targetJunctionX - 280 || ambulanceX > targetJunctionX + 220) {
+                aiCtx.fillStyle = '#475569'; aiCtx.font = '11px monospace';
+                aiCtx.fillText("CAM POLLING STANDBY: AWAITING INTERRUPT", 35, 75);
+                document.getElementById('ai-inference').className = 'data-value';
+                document.getElementById('ai-inference').innerText = 'Idle [Cam Power Save Mode]';
+                return;
+            }
+
+            aiCtx.strokeStyle = 'rgba(244, 114, 182, 0.2)'; aiCtx.lineWidth = 1;
+            for (let y = 0; y < aiCanvas.height; y += 20) {
+                aiCtx.beginPath(); aiCtx.moveTo(0, y); aiCtx.lineTo(aiCanvas.width, y); aiCtx.stroke();
+            }
+
+            document.getElementById('ai-inference').className = 'data-value text-neon';
+            if (densityProfile === 'LIGHT') {
+                document.getElementById('ai-inference').innerText = 'Inference Object Count: 2 Cars Present';
+                drawDetectedBox(40, 45, 60, 40, 'CAR: 98%', '#38bdf8');
+                drawDetectedBox(130, 45, 60, 40, 'CAR: 94%', '#fbbf24');
+            } else {
+
+                document.getElementById('ai-inference').innerText = 'Inference Warning: Cargo Obstruction Tracked';
+                drawDetectedBox(30, 35, 100, 60, 'BUS: 99%', '#f59e0b');
+                drawDetectedBox(150, 35, 90, 60, 'TRUCK: 96%', '#64748b');
+            }
+        }
+
+        function drawDetectedBox(x, y, w, h, label, color) {
+            aiCtx.strokeStyle = color; aiCtx.lineWidth = 2; aiCtx.strokeRect(x, y, w, h);
+            aiCtx.fillStyle = color; aiCtx.fillRect(x, y - 16, w, 16);
+            aiCtx.fillStyle = '#000000'; aiCtx.font = 'bold 10px sans-serif'; aiCtx.fillText(label, x + 4, y - 4);
+        }
+
+        // Processing timeline loop triggers update cycles ticks
+        function updateSimulationStep() {
+            if (!isRunning) return;
+
+            // Ambulance advances through three legs of the route, each separated by a real turn:
+            // MAIN (entry avenue) -> turn onto the SPINE (vertical) -> turn onto the hospital BRANCH road.
+            let triage = computeTriagedDestination();
+            let targetY = hospitalsConfig[triage.id].y - 8; // Adjust vehicle offset alignment parameters
+
+            if (drivePhase === 'MAIN') {
+                if (ambulanceX < targetJunctionX) {
+                    ambulanceX += 2.4;
+                } else {
+                    ambulanceX = targetJunctionX;
+                    drivePhase = 'SPINE';
+                }
+            } else if (drivePhase === 'SPINE') {
+                if (Math.abs(ambulanceY - targetY) > 2.2) {
+                    ambulanceY += Math.sign(targetY - ambulanceY) * 3.2;
+                } else {
+                    ambulanceY = targetY;
+                    drivePhase = 'BRANCH';
+                }
+            } else if (drivePhase === 'BRANCH') {
+                ambulanceX += 2.6;
+            }
+
+            let metersRemaining = Math.max(0, Math.floor((targetJunctionX - ambulanceX) * 1.2));
+            if (ambulanceX < targetJunctionX) {
+                document.getElementById('telemetry-distance').innerText = `${metersRemaining} Meters Out`;
+            } else {
+                document.getElementById('telemetry-distance').innerText = `0 Meters (Crossed)`;
+            }
+
+            if (metersRemaining <= 400 && metersRemaining > 300) {
+
+                if (!logsInjected['link_init']) {
+                    addLog(`📡 Sub-GHz Link Triggered: Polling encrypted telemetry streams from incoming Triage unit node.`, 'info');
+                    logsInjected['link_init'] = true;
+                }
+            }
+
+            if (metersRemaining <= 300 && metersRemaining > 0) {
+                if (!logsInjected['crypto_pass']) {
+                    addLog(`🔒 Secure Key Authentication verified: Token matches registry signature profiles. Decrypted Active Nurse Package: Site [${injurySite}] Cause [${injuryCause}]`, 'auth');
+                    addLog(`⚡ Interrupt Matrix Fired: Municipal traffic light cycles paused. Preemption override vector active.`, 'alert');
+                    logsInjected['crypto_pass'] = true;
+                }
+            }
+
+            if (metersRemaining <= 250 && metersRemaining > 0) {
+                if (!logsInjected['geofence_cast']) {
+                    addLog(`📢 Geo-Fence Broadcast Triggered: Relaying low-latency auditory warnings alert parameters to peripheral vehicles screens inside 200m buffer zone.`, 'action');
+                    logsInjected['geofence_cast'] = true;
+                }
+
+            }
+
+            // Signal Preemption Switch Toggles
+            if (metersRemaining <= 200 && metersRemaining > 0 && signalState === 'RED') {
+                signalState = 'ADVANCE_GREEN';
+                let triageDetails = computeTriagedDestination();
+                
+                if (injurySite === 'HEAD' || injurySite === 'CHEST') {
+                    addLog(`🚨 Critical Threat Classification confirmed! Locking extended timing parameters window framework logs.`, 'alert');
+                }
+                
+                if (densityProfile === 'LIGHT') {
+                    addLog(`⚡ TinyML object counting verified Light congestion load: Activating 5-Second Advance GREEN light corridor relay switch board!`, 'action');
+                    obstacleCars.forEach(car => car.targetSpeed = 5.2);
+                } else {
+                    addLog(`⚠️ TinyML object counting flagged Heavy obstruction: Snapping custom logic timers. Extending to 20-Second Advance GREEN flushing corridor lines!`, 'alert');
+                    obstacleCars.forEach(car => car.targetSpeed = 3.2);
+                }
+            }
+
+
+            // Check if ambulance successfully entered target hospital gate node parameter bounds
+            if (drivePhase === 'BRANCH' && ambulanceX >= HOSPITAL_GATE_X - 20) {
+                signalState = 'RESET_NORMAL';
+                if (!logsInjected['reset_done']) {
+                    addLog(`✅ SUCCESS: Ambulance safely completed path corridor transit routing execution. Successfully docked at: ${document.getElementById('telemetry-hospital').innerText}!`, 'auth');
+                    addLog(`🔄 Priority override released. Traffic lights intersection parameters reset to default cyclic timing loops.`, 'info');
+                    logsInjected['reset_done'] = true;
+                }
+                toggleSimulation(); // Pause ticks loop
+            }
+
+            // Advance obstacle vehicles: once TinyML clears them, pull toward the road shoulder
+            // and creep just clear of the ambulance's lane, then stop (no full road-length drive)
+            obstacleCars.forEach(car => {
+                if (car.targetSpeed > 0 && !car.cleared) {
+                    car.speed += (car.targetSpeed - car.speed) * 0.06;
+                    car.x += car.speed * 0.35;
+                    car.laneShift += 0.7;
+                    car.y = car.baseY - car.laneShift;
+                    if (car.laneShift >= 28) {
+                        car.cleared = true;
+                        car.speed = 0;
+                    }
+                }
+            });
+
+            updateAmbientTraffic();
+            drawCartoonScene();
+            drawAICameraInference();
+
+            if (isRunning) {
+                animationId = requestAnimationFrame(updateSimulationStep);
+            }
+        }
+
+
+        function toggleSimulation() {
+            const btn = document.getElementById('actionBtn');
+            if (!isRunning) {
+                if (drivePhase === 'BRANCH' && ambulanceX >= HOSPITAL_GATE_X - 30) {
+                    // Rewind properties to execute clean iterative sandbox scenarios tracking 
+                    ambulanceX = START_X; ambulanceY = START_Y; drivePhase = 'MAIN'; signalState = 'RED'; logsInjected = {}; initializeObstacles();
+                }
+                isRunning = true;
+                btn.innerText = "⏸️ Pause Triage & Preemption Simulation Ticks";
+                btn.style.background = "linear-gradient(135deg, #ef4444, #b91c1c)";
+                addLog(`🚀 Dispatch Execution: Routing path calculations locked down. Target: ${document.getElementById('telemetry-hospital').innerText}`, 'action');
+                animationId = requestAnimationFrame(updateSimulationStep);
+            } else {
+                isRunning = false;
+                btn.innerText = "🚀 Dispatch & Compute Dynamic Emergency Route";
+                btn.style.background = "linear-gradient(135deg, #22c55e, #16a34a)";
+                addLog("⏸️ Simulation paused by monitoring dashboard control line data register override commands.", 'info');
+                cancelAnimationFrame(animationId);
+            }
+
+        }
+
+        function resetSimulation() {
+            isRunning = false; cancelAnimationFrame(animationId);
+            ambulanceX = START_X; ambulanceY = START_Y; drivePhase = 'MAIN'; signalState = 'RED'; logsInjected = {}; initializeObstacles();
+            const btn = document.getElementById('actionBtn');
+            btn.innerText = "🚀 Dispatch & Compute Dynamic Emergency Route";
+            btn.style.background = "linear-gradient(135deg, #22c55e, #16a34a)";
+            document.getElementById('telemetry-distance').innerText = `600 Meters Out`;
+            syncTriageFormTelemetry();
+            drawCartoonScene(); drawAICameraInference();
+            addLog("🔄 Full system simulation metrics data configuration sandbox environment reset done.", 'info');
+        }
+
+        window.onload = function() {
+            initializeObstacles();
+            syncTriageFormTelemetry();
+            drawCartoonScene();
+            drawAICameraInference();
+
+            addLog("🤖 Med-Transit Connect Nurse-Onboarding Simulator node running successfully in local environment memory register loop lines.", 'auth');
+        };
+    </script>
+
+</body>
+</html>
